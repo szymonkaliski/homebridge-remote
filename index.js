@@ -1,18 +1,55 @@
 #!/usr/bin/env node
 
+const fs = require("fs");
+const path = require("path");
 const request = require("request");
 const yargs = require("yargs");
 
+const CONFIG_FILE = path.join(
+  require("os").homedir(),
+  ".homebridge-remote.json"
+);
+
+if (!fs.existsSync(CONFIG_FILE)) {
+  console.log(`
+    ${CONFIG_FILE} not found, please create it:
+
+    {
+      "auth": HOMEBRIDGE_AUTH,
+      "url": HOMEBRIDGE_URL
+    }
+`);
+
+  process.exit(1);
+}
+
+const CONFIG = require(CONFIG_FILE);
+
+if (!CONFIG.auth) {
+  console.log(`
+    "auth" key not found in ${CONFIG_FILE}, please add it
+`);
+
+  process.exit(1);
+}
+
+if (!CONFIG.url) {
+  console.log(`
+    "url" key not found in ${CONFIG_FILE}, please add it
+`);
+
+  process.exit(1);
+}
+
+const AUTHORIZATION_CODE = CONFIG.auth;
+const HOMEBRIDGE_HOST = CONFIG.url;
+
 const argv = yargs
-  .usage("Usage: $0 --host HOMEBRIDGE_URL --auth HOMEBRIDGE_AUTH")
-  .demandOption(["host", "auth"])
+  .usage("Usage: $0")
   .demandCommand(1)
   .command("get [aid] [iid]", "get status for provided aid and iid")
   .command("set [aid] [iid] [value]", "set value for provided aid and iid")
   .command("toggle [aid] [iid]", "toggle value for provided aid and iid").argv;
-
-const AUTHORIZATION_CODE = argv.auth;
-const HOMEBRIDGE_HOST = argv.host;
 
 const [command] = argv._;
 const { aid, iid, value } = argv;
@@ -88,7 +125,7 @@ if (command === "get") {
       process.exit(1);
     }
 
-    console.log(parsed.status);
+    console.log(parsed.value === true ? 1 : 0);
     process.exit(0);
   });
 }

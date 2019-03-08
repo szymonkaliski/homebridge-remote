@@ -20,10 +20,21 @@ Feel free to fork and change as needed.
 npm i -g homebridge-remote
 ```
 
+## Setup
+
+Create `~/.homebridge-remote.json` file containing:
+
+```json
+{
+  "auth": "YOUR_HOMEBRIDGE_AUTH_CODE",
+  "url": "YOUR_HOMEBRIDGE_URL"
+}
+```
+
 ## Usage
 
 ```
-Usage: homebridge-remote --host HOMEBRIDGE_URL --auth HOMEBRIDGE_AUTH
+Usage: homebridge-remote
 
 Commands:
   homebridge-remote get [aid] [iid]          get status for provided aid and iid
