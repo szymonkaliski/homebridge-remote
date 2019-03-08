@@ -44,7 +44,5 @@ Commands:
 Options:
   --help     Show help                                                 [boolean]
   --version  Show version number                                       [boolean]
-  --host                                                              [required]
-  --auth                                                              [required]
 ```
 
