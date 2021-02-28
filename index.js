@@ -1,125 +1,40 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
-const request = require("request");
 const yargs = require("yargs");
 
-const CONFIG_FILE = path.join(
-  require("os").homedir(),
-  ".homebridge-remote.json"
-);
+const {
+  getConfig,
+  getAccessories,
+  getCharacteristics,
+  setCharacteristics,
+} = require("./lib");
 
-if (!fs.existsSync(CONFIG_FILE)) {
-  console.log(`
-    ${CONFIG_FILE} not found, please create it:
+let config;
 
-    {
-      "auth": HOMEBRIDGE_AUTH,
-      "url": HOMEBRIDGE_URL
-    }
-`);
-
+try {
+  config = getConfig();
+} catch (e) {
+  console.log(e);
   process.exit(1);
 }
-
-const CONFIG = require(CONFIG_FILE);
-
-if (!CONFIG.auth) {
-  console.log(`
-    "auth" key not found in ${CONFIG_FILE}, please add it
-`);
-
-  process.exit(1);
-}
-
-if (!CONFIG.url) {
-  console.log(`
-    "url" key not found in ${CONFIG_FILE}, please add it
-`);
-
-  process.exit(1);
-}
-
-const AUTHORIZATION_CODE = CONFIG.auth;
-const HOMEBRIDGE_HOST = CONFIG.url;
 
 const argv = yargs
   .usage("Usage: $0")
   .demandCommand(1)
-  .command("get [aid] [iid]", "get status for provided aid and iid")
-  .command("set [aid] [iid] [value]", "set value for provided aid and iid")
-  .command("toggle [aid] [iid]", "toggle value for provided aid and iid").argv;
+  .command("get [aid]", "get status for provided aid")
+  .command("set [aid] [value]", "set value for provided aid")
+  .command("toggle [aid]", "toggle value for provided aid")
+  .command("list", "list available devices", (yagrs) => {
+    yargs.option("json", {
+      describe: "format output as JSON",
+    });
+  }).argv;
 
 const [command] = argv._;
-const { aid, iid, value } = argv;
-
-const getCharacteristics = (aid, iid, callback) => {
-  request(
-    {
-      url: `${HOMEBRIDGE_HOST}/characteristics?id=${aid}.${iid}`,
-      headers: {
-        "Content-Type": "application/json",
-        authorization: AUTHORIZATION_CODE
-      }
-    },
-    (err, res, body) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      let parsed;
-
-      try {
-        parsed = JSON.parse(body);
-      } catch (err) {
-        callback(err);
-        return;
-      }
-
-      callback(null, parsed.characteristics[0]);
-    }
-  );
-};
-
-const setCharacteristics = (aid, iid, value, callback) => {
-  request(
-    {
-      method: "PUT",
-      url: `${HOMEBRIDGE_HOST}/characteristics?id=${aid}.${iid}`,
-      body: JSON.stringify({
-        characteristics: [
-          { aid, iid, status: value === 0 ? false : true, value }
-        ]
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        authorization: AUTHORIZATION_CODE
-      }
-    },
-    (err, res, body) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      let parsed;
-
-      try {
-        parsed = JSON.parse(body);
-      } catch (err) {
-        callback(err);
-        return;
-      }
-
-      callback(null, parsed);
-    }
-  );
-};
+const { aid, value } = argv;
 
 if (command === "get") {
-  getCharacteristics(aid, iid, (err, parsed) => {
+  getCharacteristics(config, aid, (err, parsed) => {
     if (err) {
       console.log(err);
       process.exit(1);
@@ -131,7 +46,7 @@ if (command === "get") {
 }
 
 if (command === "set") {
-  setCharacteristics(aid, iid, value, err => {
+  setCharacteristics(config, aid, value, (err) => {
     if (err) {
       console.log(err);
       process.exit(1);
@@ -142,13 +57,13 @@ if (command === "set") {
 }
 
 if (command === "toggle") {
-  getCharacteristics(aid, iid, (err, parsed) => {
+  getCharacteristics(config, aid, (err, parsed) => {
     if (err) {
       console.log(err);
       process.exit(1);
     }
 
-    setCharacteristics(aid, iid, parsed.value ? 0 : 1, err => {
+    setCharacteristics(config, aid, parsed.value ? 0 : 1, (err) => {
       if (err) {
         console.log(err);
         process.exit(1);
@@ -156,5 +71,23 @@ if (command === "toggle") {
 
       process.exit(0);
     });
+  });
+}
+
+if (command === "list") {
+  getAccessories(config, (err, data) => {
+    if (err) {
+      console.log(err);
+      process.exit(1);
+    }
+
+    if (argv.json) {
+      console.log(JSON.stringify(data));
+      process.exit(0);
+    } else {
+      data.forEach((d) => {
+        console.log(`${d.name}\t${d.value}\t[aid: ${d.aid}]`);
+      });
+    }
   });
 }
