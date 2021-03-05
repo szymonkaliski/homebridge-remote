@@ -1,12 +1,7 @@
 # homebridge-remote
 
-Simple remote control for homebridge, requires `aid` and `iid` which can be found using:
-
-```bash
-curl -X PUT $HOMEBRIDGE_HOST/accessories --header "Content-Type:Application/json" --header "authorization:$HOMEBRIDGE_CODE" -s
-```
-
-Homberidge should be run in insecure mode (using `-I` command line switch).
+Simple remote control for Homebridge.
+Homebridge should be run in insecure mode (using `-I` command line switch).
 
 ## Warning
 
@@ -37,9 +32,10 @@ Create `~/.homebridge-remote.json` file containing:
 Usage: homebridge-remote
 
 Commands:
-  homebridge-remote get [aid] [iid]          get status for provided aid and iid
-  homebridge-remote set [aid] [iid] [value]  set value for provided aid and iid
-  homebridge-remote toggle [aid] [iid]       toggle value for provided aid and iid
+  homebridge-remote get [aid]          get status for provided aid
+  homebridge-remote set [aid] [value]  set value for provided aid
+  homebridge-remote toggle [aid]       toggle value for provided aid
+  homebridge-remote list               list available devices
 
 Options:
   --help     Show help                                                 [boolean]
