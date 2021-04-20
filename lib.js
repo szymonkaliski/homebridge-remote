@@ -2,8 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const request = require("request");
 
-const IID = 11;
-
 const CONFIG_FILE = path.join(
   require("os").homedir(),
   ".homebridge-remote.json"
@@ -67,27 +65,29 @@ const getAccessories = (config, callback) => {
       .map((d) => {
         let name;
         let value;
+        let iid;
 
         // FIXME: this is super ugly!
         d.services.forEach((s) => {
-          if (name !== undefined || value !== undefined) {
+          if (name !== undefined && value !== undefined) {
             return;
           }
 
-          name = s.characteristics.find((c) => c.iid === 10);
-          value = s.characteristics.find((c) => c.iid === 11);
+          name = s.characteristics.find((c) => c.type === "23");
+          value = s.characteristics.find((c) => c.type === "25");
 
-          if (name) {
+          if (name !== undefined) {
             name = name.value;
           }
 
-          if (value) {
+          if (value !== undefined) {
+            iid = value.iid;
             value = value.value;
           }
         });
 
         if (name !== undefined && value !== undefined) {
-          return { aid: d.aid, name, value };
+          return { aid: d.aid, iid, name, value };
         }
       })
       .filter((x) => x);
@@ -96,8 +96,8 @@ const getAccessories = (config, callback) => {
   });
 };
 
-const getCharacteristics = (config, aid, callback) => {
-  getHomebridge(config, `characteristics?id=${aid}.${IID}`, (err, data) => {
+const getCharacteristics = (config, aid, iid, callback) => {
+  getHomebridge(config, `characteristics?id=${aid}.${iid}`, (err, data) => {
     if (err) {
       callback(err);
       return;
@@ -107,13 +107,13 @@ const getCharacteristics = (config, aid, callback) => {
   });
 };
 
-const setCharacteristics = (config, aid, value, callback) => {
+const setCharacteristics = (config, aid, iid, value, callback) => {
   request(
     {
       method: "PUT",
-      url: `${config.url}/characteristics?id=${aid}.${IID}`,
+      url: `${config.url}/characteristics?id=${aid}.${iid}`,
       body: JSON.stringify({
-        characteristics: [{ aid, iid: IID, status: value !== 0, value }],
+        characteristics: [{ aid, iid, status: value !== 0, value }],
       }),
       headers: {
         "Content-Type": "application/json",

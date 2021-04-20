@@ -21,9 +21,9 @@ try {
 const argv = yargs
   .usage("Usage: $0")
   .demandCommand(1)
-  .command("get [aid]", "get status for provided aid")
-  .command("set [aid] [value]", "set value for provided aid")
-  .command("toggle [aid]", "toggle value for provided aid")
+  .command("get [aid] [iid]", "get status for provided aid")
+  .command("set [aid] [iid] [value]", "set value for provided aid")
+  .command("toggle [aid] [iid]", "toggle value for provided aid")
   .command("list", "list available devices", (yagrs) => {
     yargs.option("json", {
       describe: "format output as JSON",
@@ -31,10 +31,10 @@ const argv = yargs
   }).argv;
 
 const [command] = argv._;
-const { aid, value } = argv;
+const { aid, iid, value } = argv;
 
 if (command === "get") {
-  getCharacteristics(config, aid, (err, parsed) => {
+  getCharacteristics(config, aid, iid, (err, parsed) => {
     if (err) {
       console.log(err);
       process.exit(1);
@@ -46,7 +46,7 @@ if (command === "get") {
 }
 
 if (command === "set") {
-  setCharacteristics(config, aid, value, (err) => {
+  setCharacteristics(config, aid, iid, value, (err) => {
     if (err) {
       console.log(err);
       process.exit(1);
@@ -57,13 +57,13 @@ if (command === "set") {
 }
 
 if (command === "toggle") {
-  getCharacteristics(config, aid, (err, parsed) => {
+  getCharacteristics(config, aid, iid, (err, parsed) => {
     if (err) {
       console.log(err);
       process.exit(1);
     }
 
-    setCharacteristics(config, aid, parsed.value ? 0 : 1, (err) => {
+    setCharacteristics(config, aid, iid, parsed.value ? 0 : 1, (err) => {
       if (err) {
         console.log(err);
         process.exit(1);
@@ -86,7 +86,7 @@ if (command === "list") {
       process.exit(0);
     } else {
       data.forEach((d) => {
-        console.log(`${d.name}\t${d.value}\t[aid: ${d.aid}]`);
+        console.log(`${d.name}\t${d.value}\t[aid: ${d.aid}, iid: ${d.iid}]`);
       });
     }
   });
